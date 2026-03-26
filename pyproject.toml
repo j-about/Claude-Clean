@@ -1,0 +1,48 @@
+[project]
+name = "claude-clean"
+version = "0.1.0"
+description = "CLI for selectively purging Claude Code project data — history, settings, metadata, or everything at once."
+authors = [
+    { name = "j-about", email = "142051449+j-about@users.noreply.github.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.14.3"
+dependencies = ["typer==0.24.1"]
+keywords = ["claude", "claude-code", "cli", "cleanup", "developer-tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/j-about/Claude-Clean"
+Repository = "https://github.com/j-about/Claude-Clean"
+Issues = "https://github.com/j-about/Claude-Clean/issues"
+
+[project.scripts]
+claude-clean = "claude_clean:main"
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["pytest==9.0.2", "mypy==1.19.1", "ruff==0.15.8"]
+
+[tool.mypy]
+strict = true
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
