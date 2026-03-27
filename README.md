@@ -7,6 +7,9 @@ Claude Code stores conversation history, session artifacts, project settings, an
 > [!CAUTION]
 > All deletions performed by this tool are **permanent and irreversible**. There is no undo, no trash, and no recovery mechanism. Always run with `--dry-run` first to review the exact list of files and directories that will be affected before committing to a destructive operation.
 
+> [!IMPORTANT]
+> **Built-in safety guard:** If your home directory (e.g., `/home/user`, `C:\Users\user`) has ever been opened as a project in Claude Code, the `settings` and `purge` commands will **never** delete the global `~/.claude` configuration directory — even though `{home}/.claude` and `~/.claude` are the same path. Conversation history, session artifacts, and other per-project data inside `~/.claude` are still cleaned normally; only the directory itself is protected.
+
 ---
 
 ## Table of Contents
@@ -234,6 +237,8 @@ The following table maps each command to the Claude Code data it targets:
 | Session environment | `~/.claude/session-env/{session}/` | X | | | | X |
 | Plan documents | `~/.claude/plans/{name}.md` | X | | | | X |
 | Project-local settings | `{project}/.claude/` | | X | | | X |
+
+> **Note:** When the project path is your home directory, the `{project}/.claude/` deletion is skipped to protect the global `~/.claude` configuration directory. All other data categories listed above are still cleaned as expected.
 | User-level project state | `~/.claude.json` (projects key) | | | X | | X |
 | Root memory file | `{project}/CLAUDE.md` | | | | X | X |
 | Nested memory file | `{project}/.claude/CLAUDE.md` | | | | X | X |
@@ -310,6 +315,8 @@ tests/
 - **Atomic writes.** All JSON and JSONL rewrites use `tempfile.mkstemp()` in the same directory followed by `os.replace()`, ensuring no data corruption on crash or interrupt.
 
 - **Batch efficiency.** When operating on multiple projects, shared files like `history.jsonl` and `~/.claude.json` are rewritten exactly once — not once per project.
+
+- **Global config protection.** Before planning any directory deletion, the tool resolves paths and verifies that the target is not the global `~/.claude` directory. This prevents catastrophic data loss when the user's home directory itself is registered as a Claude Code project.
 
 ---
 

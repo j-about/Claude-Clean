@@ -166,16 +166,47 @@ class TestPlanSettingsCleanup:
         assert ActionKind.REWRITE_JSON in kinds
 
     def test_user_scope_all_projects(self, fake_home: ClaudeDataPaths) -> None:
-        """Removing all projects from claude.json leaves empty projects dict."""
+        """Removing PROJECT_A and PROJECT_B leaves only the home-dir project."""
         actions = plan_settings_cleanup([PROJECT_A, PROJECT_B], fake_home, "user")
         json_rewrites = [a for a in actions if a.kind == ActionKind.REWRITE_JSON]
         assert len(json_rewrites) == 1
-        assert json_rewrites[0].payload["projects"] == {}
+        remaining = json_rewrites[0].payload["projects"]
+        assert PROJECT_A not in remaining
+        assert PROJECT_B not in remaining
+        # Only the home-directory project remains
+        assert len(remaining) == 1
 
     def test_project_not_in_json(self, fake_home: ClaudeDataPaths) -> None:
         """Non-existent project key in user scope produces no rewrite."""
         actions = plan_settings_cleanup(["/nonexistent"], fake_home, "user")
         assert not any(a.kind == ActionKind.REWRITE_JSON for a in actions)
+
+    def test_home_dir_project_never_deletes_global_claude_dir(
+        self, fake_home: ClaudeDataPaths
+    ) -> None:
+        """When a project path equals ~ , {project}/.claude IS ~/.claude.
+
+        The guard must prevent DELETE_DIR on the global config directory
+        for both 'project' and 'all' scopes.
+        """
+        home_project = str(fake_home.home)
+        for scope in ("project", "all"):
+            actions = plan_settings_cleanup([home_project], fake_home, scope)
+            dir_deletes = [a for a in actions if a.kind == ActionKind.DELETE_DIR]
+            for a in dir_deletes:
+                assert a.path.resolve() != fake_home.claude_dir.resolve(), (
+                    f"scope={scope!r}: planned DELETE_DIR on global ~/.claude"
+                )
+
+    def test_home_dir_project_user_scope_still_works(
+        self, fake_home: ClaudeDataPaths
+    ) -> None:
+        """User-scope cleanup for a home-dir project still removes the JSON key."""
+        home_project = str(fake_home.home)
+        actions = plan_settings_cleanup([home_project], fake_home, "user")
+        json_rewrites = [a for a in actions if a.kind == ActionKind.REWRITE_JSON]
+        assert len(json_rewrites) == 1
+        assert home_project not in json_rewrites[0].payload["projects"]
 
 
 # ---------------------------------------------------------------------------
@@ -238,3 +269,15 @@ class TestPlanPurge:
             key = (a.kind.name, str(a.path))
             assert key not in seen, f"Duplicate action: {key}"
             seen.add(key)
+
+    def test_home_dir_purge_never_deletes_global_claude_dir(
+        self, fake_home: ClaudeDataPaths
+    ) -> None:
+        """Full purge for a home-directory project must not delete ~/.claude."""
+        home_project = str(fake_home.home)
+        actions = plan_purge([home_project], fake_home)
+        for a in actions:
+            if a.kind == ActionKind.DELETE_DIR:
+                assert a.path.resolve() != fake_home.claude_dir.resolve(), (
+                    f"purge planned DELETE_DIR on global ~/.claude: {a}"
+                )

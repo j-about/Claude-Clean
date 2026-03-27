@@ -75,6 +75,7 @@ def fake_home(tmp_path: Path) -> ClaudeDataPaths:
         {
             PROJECT_A: {"allowedTools": [], "lastSessionId": SESSION_A2},
             PROJECT_B: {"allowedTools": [], "lastSessionId": SESSION_B1},
+            str(tmp_path): {"allowedTools": [], "lastSessionId": "home-session-01"},
         }
     )
     paths.claude_json.write_text(

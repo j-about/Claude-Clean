@@ -91,26 +91,15 @@ def _plan_history_jsonl_filter(
                                 description=f"Delete paste cache: {cache_file.name}",
                             )
                         )
-            # Line is removed (not added to remaining)
         else:
             remaining.append(entry)
-
-    # Rewrite history.jsonl with remaining entries
-    # Serialize: entries with _raw key are kept as-is
-    serialized: list[dict[str, Any]] = []
-    for entry in remaining:
-        if "_raw" in entry:
-            # Will be handled specially during write
-            serialized.append(entry)
-        else:
-            serialized.append(entry)
 
     actions.append(
         Action(
             kind=ActionKind.REWRITE_JSONL,
             path=paths.history_jsonl,
             description="Rewrite history.jsonl (filtered)",
-            payload=serialized,
+            payload=remaining,
         )
     )
 
@@ -215,8 +204,21 @@ def plan_settings_cleanup(
     actions: list[Action] = []
 
     if scope in ("project", "all"):
+        global_claude_dir = paths.claude_dir.resolve()
         for project_path in project_paths:
             proj_claude_dir = Path(project_path) / ".claude"
+            # The home directory can be a registered project, making
+            # {project}/.claude resolve to the global config directory.
+            try:
+                is_global = proj_claude_dir.resolve() == global_claude_dir
+            except OSError:
+                is_global = True
+            if is_global:
+                logger.warning(
+                    "Skipping deletion of %s (global Claude config directory)",
+                    proj_claude_dir,
+                )
+                continue
             if proj_claude_dir.exists():
                 actions.append(
                     Action(
@@ -237,9 +239,6 @@ def _plan_claude_json_key_removal(
     paths: ClaudeDataPaths,
 ) -> list[Action]:
     """Plan removal of project keys from ~/.claude.json."""
-    if not paths.claude_json.exists():
-        return []
-
     try:
         data = json.loads(paths.claude_json.read_text(encoding="utf-8"))
     except json.JSONDecodeError, OSError:

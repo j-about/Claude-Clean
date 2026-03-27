@@ -151,7 +151,7 @@ class TestLoadProjects:
 class TestResolveProjects:
     def test_all_flag(self, fake_home: ClaudeDataPaths) -> None:
         result = resolve_projects(None, True, fake_home)
-        assert len(result) == 2
+        assert len(result) == 3  # PROJECT_A, PROJECT_B, home-dir project
         assert "/home/testuser/project-alpha" in result
         assert "/home/testuser/project-beta" in result
 
@@ -171,9 +171,9 @@ class TestResolveProjects:
 
     def test_interactive_all(self, fake_home: ClaudeDataPaths) -> None:
         """Selecting the ALL option returns all projects."""
-        with patch("claude_clean.utils.typer.prompt", return_value="3"):
+        with patch("claude_clean.utils.typer.prompt", return_value="4"):
             result = resolve_projects(None, False, fake_home)
-        assert len(result) == 2
+        assert len(result) == 3  # PROJECT_A, PROJECT_B, home-dir project
 
 
 # ---------------------------------------------------------------------------
