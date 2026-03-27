@@ -1,6 +1,6 @@
 [project]
 name = "claude-clean"
-version = "0.1.0"
+version = "0.1.1"
 description = "CLI for selectively purging Claude Code project data — history, settings, metadata, or everything at once."
 authors = [
     { name = "j-about", email = "142051449+j-about@users.noreply.github.com" }
